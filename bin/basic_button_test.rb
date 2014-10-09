@@ -42,7 +42,7 @@ after :pin => 23, :goes => :low do
   GREEN.on
 end
 
-# Initilized signal
+# Signal initialization is complete
 4.times do
   RED.on
   GREEN.off
