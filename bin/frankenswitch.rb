@@ -15,6 +15,12 @@
 #
 # When the button is released, the lights toggle
 # back to default state of Green on and Red off
+#
+# NOTE: The Sainsmart 4 Channel Relay Board uses
+#       Logic Low to consider a relay "active"
+#       This can be confusing at best
+#
+# copyright (c) 2014 Mike Heijmans
 
 # Load the lib path into the load_path
 $:.unshift("../lib")
@@ -27,25 +33,26 @@ puts "starting"
 
 require 'meatpi'
 
-@running = true
-
 # Setup ouput pin constants
 LIGHT_RELAY = PiPiper::Pin.new(:pin => 17, :direction => :out)
 SIREN_RELAY = PiPiper::Pin.new(:pin => 21, :direction => :out)
 
-# We need a thread array to keep our threads for later
-threads = []
+# Pull the relay pins up because of the way the Sainsmart relay boards work
+LIGHT_RELAY.on
+SIREN_RELAY.on
 
-# Siren routine
+# We need a thread array to keep our threads for later graceful shutdown
+threads = []
+# We also need to set the running state for handling graceful shutdown later
+@running = true
+
+# Siren routine (run this in a thread to prevent blocking of main thread)
 def sirenate!
   # siren time
-  stime = 0.5
-  3.times do
-    SIREN_RELAY.on
-    sleep stime
-    SIREN_RELAY.off
-    sleep stime
-  end
+  stime = 3
+  SIREN_RELAY.off
+  sleep stime
+  SIREN_RELAY.on
 end
 
 # Shutdown routine for killing everything off gracefully
@@ -67,24 +74,36 @@ def shutdown(threads)
     sleep 0.1
   end
 
-  # finish up by turnning all the pins off
-  LIGHT_RELAY.off
-  SIREN_RELAY.off
+  # finish up by turnning all relays on to set the relays to their default state
+  LIGHT_RELAY.on
+  SIREN_RELAY.on
 
-  # shutdown main loop
+  # signal shutdown of main loop
   @running = false
 end
 
+# Setup Signal Handling
+Signal.trap("TERM") do
+  puts "Terminating..."
+  shutdown(threads)
+end
+Signal.trap("INT") do
+  puts "Terminating..."
+  shutdown(threads)
+end
+
+## Main Routine Logic
+
 # Pin watchers
-threads << after(:pin => 23, :goes => :high, :pull => :down) do
+threads << after(:pin => 23, :goes => :high) do
   puts 'switch activated!'
-  LIGHT_RELAY.on
-  sirenate!
+  LIGHT_RELAY.off
+  Thread.new { sirenate! }
 end
 
 threads << after(:pin => 23, :goes => :low) do
   puts "switch released!"
-  LIGHT_RELAY.off
+  LIGHT_RELAY.on
 end
 
 # Signal initialization is complete
@@ -98,19 +117,9 @@ end
 # Let me know we're up and running
 puts "started"
 
-Signal.trap("TERM") do
-  puts "Terminating..."
-  shutdown(threads)
-end
-
-Signal.trap("INT") do
-  puts "Terminating..."
-  shutdown(threads)
-end
-
 # aaaaaand loop
 while @running do
-  sleep 1
+  sleep 0.1
 end
 
 exit 0
