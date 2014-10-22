@@ -27,6 +27,8 @@ puts "starting"
 
 require 'meatpi'
 
+@running = true
+
 # Setup ouput pin constants
 LIGHT_RELAY = PiPiper::Pin.new(:pin => 17, :direction => :out)
 SIREN_RELAY = PiPiper::Pin.new(:pin => 21, :direction => :out)
@@ -37,7 +39,7 @@ threads = []
 # Siren routine
 def sirenate!
   # siren time
-  stime = 1
+  stime = 0.5
   3.times do
     SIREN_RELAY.on
     sleep stime
@@ -69,18 +71,18 @@ def shutdown(threads)
   LIGHT_RELAY.off
   SIREN_RELAY.off
 
-  # exit gracefully
-  exit 0
+  # shutdown main loop
+  @running = false
 end
 
 # Pin watchers
-threads << after :pin => 23, :goes => :high, :pull => :down do
+threads << after(:pin => 23, :goes => :high, :pull => :down) do
   puts 'switch activated!'
   LIGHT_RELAY.on
   sirenate!
 end
 
-threads << after :pin => 23, :goes => :low do
+threads << after(:pin => 23, :goes => :low) do
   puts "switch released!"
   LIGHT_RELAY.off
 end
@@ -101,5 +103,14 @@ Signal.trap("TERM") do
   shutdown(threads)
 end
 
+Signal.trap("INT") do
+  puts "Terminating..."
+  shutdown(threads)
+end
+
 # aaaaaand loop
-PiPiper.wait
+while @running do
+  sleep 1
+end
+
+exit 0
