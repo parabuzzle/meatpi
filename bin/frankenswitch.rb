@@ -4,9 +4,9 @@
 # Uses GPIO for a red<->green toggle and siren trigger
 # for the haunted house crazy knife switch project
 #
-# Light Relay is wired to pin 17
-# Siren Relay is wired to pin 21
-# Button is wired to pin 23
+# Light Relay is wired to pin 24
+# Siren Relay is wired to pin 23
+# Button is wired to pin 25
 #
 # By default, the Green Light is illuminated and
 # when the button is activated the the Red Light is
@@ -34,8 +34,9 @@ puts "starting"
 require 'meatpi'
 
 # Setup ouput pin constants
-LIGHT_RELAY = PiPiper::Pin.new(:pin => 17, :direction => :out)
-SIREN_RELAY = PiPiper::Pin.new(:pin => 21, :direction => :out)
+LIGHT_RELAY        = PiPiper::Pin.new(:pin => 24, :direction => :out)
+SIREN_RELAY        = PiPiper::Pin.new(:pin => 23, :direction => :out)
+SWITCH_PIN         = 25
 
 # Pull the relay pins up because of the way the Sainsmart relay boards work
 LIGHT_RELAY.on
@@ -95,22 +96,22 @@ end
 ## Main Routine Logic
 
 # Pin watchers
-threads << after(:pin => 23, :goes => :high) do
+threads << after(:pin => SWITCH_PIN, :goes => :high, :pull => :down) do
   puts 'switch activated!'
   LIGHT_RELAY.off
   Thread.new { sirenate! }
 end
 
-threads << after(:pin => 23, :goes => :low) do
+threads << after(:pin => SWITCH_PIN, :goes => :low, :pull => :down) do
   puts "switch released!"
   LIGHT_RELAY.on
 end
 
 # Signal initialization is complete
 3.times do
-  LIGHT_RELAY.on
-  sleep 1
   LIGHT_RELAY.off
+  sleep 1
+  LIGHT_RELAY.on
   sleep 1
 end
 
