@@ -6,6 +6,7 @@
 #
 # Light Relay is wired to pin 24
 # Siren Relay is wired to pin 23
+# Moster Relay is wired to pin 18
 # Button is wired to pin 25
 #
 # By default, the Green Light is illuminated and
@@ -36,6 +37,7 @@ require 'meatpi'
 # Setup ouput pin constants
 LIGHT_RELAY        = PiPiper::Pin.new(:pin => 24, :direction => :out)
 SIREN_RELAY        = PiPiper::Pin.new(:pin => 23, :direction => :out)
+MONSTER_RELAY      = PiPiper::Pin.new(:pin => 18, :direction => :out)
 SWITCH_PIN         = 25
 
 # Pull the relay pins up because of the way the Sainsmart relay boards work
@@ -54,6 +56,21 @@ def sirenate!
   SIREN_RELAY.off
   sleep stime
   SIREN_RELAY.on
+end
+
+@monster = Thread.new {}
+def monster_awake!
+  # moster run time
+  mtime = 5
+  delay = 2
+  sleep delay
+  MONSTER_RELAY.off
+  sleep mtime
+  MONSTER_RELAY.on
+  sleep rand(1..4)
+  MONSTER_RELAY.off
+  sleep mtime
+  MONSTER_RELAY.on
 end
 
 # Shutdown routine for killing everything off gracefully
@@ -78,6 +95,7 @@ def shutdown(threads)
   # finish up by turnning all relays on to set the relays to their default state
   LIGHT_RELAY.on
   SIREN_RELAY.on
+  MONSTER_RELAY.on
 
   # signal shutdown of main loop
   @running = false
@@ -100,10 +118,13 @@ threads << after(:pin => SWITCH_PIN, :goes => :high, :pull => :down) do
   puts 'switch activated!'
   LIGHT_RELAY.off
   Thread.new { sirenate! }
+  @monster.exit # Always exit the monster first!
+  @monster = Thread.new {monster_awake}
 end
 
 threads << after(:pin => SWITCH_PIN, :goes => :low, :pull => :down) do
   puts "switch released!"
+  @monster.exit
   LIGHT_RELAY.on
 end
 
