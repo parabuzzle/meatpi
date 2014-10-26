@@ -119,7 +119,7 @@ threads << after(:pin => SWITCH_PIN, :goes => :high, :pull => :down) do
   LIGHT_RELAY.off
   Thread.new { sirenate! }
   @monster.exit # Always exit the monster first!
-  @monster = Thread.new {monster_awake}
+  @monster = Thread.new {monster_awake!}
 end
 
 threads << after(:pin => SWITCH_PIN, :goes => :low, :pull => :down) do
