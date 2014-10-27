@@ -52,11 +52,12 @@ threads = []
 
 # Siren routine (run this in a thread to prevent blocking of main thread)
 def sirenate!
-  # siren time
-  stime = 3
-  SIREN_RELAY.off
-  sleep stime
-  SIREN_RELAY.on
+  2.times do
+    SIREN_RELAY.off
+    sleep 0.5
+    SIREN_RELAY.on
+    sleep 0.25
+  end
 end
 
 monster = MeatPi::BoxMonster.instance(MONSTER_RELAY, true)
