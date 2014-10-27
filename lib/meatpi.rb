@@ -7,6 +7,7 @@ include PiPiper
 
 require 'meatpi/exceptions'
 require 'meatpi/version'
+require 'meatpi/boxmonster'
 
 module MeatPi
 

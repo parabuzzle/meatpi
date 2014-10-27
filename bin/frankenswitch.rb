@@ -43,6 +43,7 @@ SWITCH_PIN         = 25
 # Pull the relay pins up because of the way the Sainsmart relay boards work
 LIGHT_RELAY.on
 SIREN_RELAY.on
+MONSTER_RELAY.on
 
 # We need a thread array to keep our threads for later graceful shutdown
 threads = []
@@ -58,23 +59,12 @@ def sirenate!
   SIREN_RELAY.on
 end
 
-@monster = Thread.new {}
-def monster_awake!
-  # moster run time
-  mtime = 5
-  delay = 2
-  sleep delay
-  MONSTER_RELAY.off
-  sleep mtime
-  MONSTER_RELAY.on
-  sleep rand(1..4)
-  MONSTER_RELAY.off
-  sleep mtime
-  MONSTER_RELAY.on
-end
+monster = MeatPi::BoxMonster.instance(MONSTER_RELAY, true)
+$monster = Thread.new {}
 
 # Shutdown routine for killing everything off gracefully
 def shutdown(threads)
+  $monster.exit
   # exit each thread safely
   threads.each do |thread|
     thread.exit
@@ -118,13 +108,13 @@ threads << after(:pin => SWITCH_PIN, :goes => :high, :pull => :down) do
   puts 'switch activated!'
   LIGHT_RELAY.off
   Thread.new { sirenate! }
-  @monster.exit # Always exit the monster first!
-  @monster = Thread.new {monster_awake!}
+  $monster.exit # Always exit the monster first!
+  $monster = Thread.new { monster.angry_monster_routine }
 end
 
 threads << after(:pin => SWITCH_PIN, :goes => :low, :pull => :down) do
   puts "switch released!"
-  @monster.exit
+  monster.sleep!
   LIGHT_RELAY.on
 end
 
