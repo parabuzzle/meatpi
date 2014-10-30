@@ -30,6 +30,13 @@ module MeatPi
       }
     end
 
+    def sleep!
+      @mutex.synchronize {
+        @status = 'sleeping'
+        self.off
+      }
+    end
+
     def angry_monster_routine
       awake!
       begin
@@ -42,13 +49,6 @@ module MeatPi
       ensure
         sleep!
       end
-    end
-
-    def sleep!
-      @mutex.synchronize {
-        @status = 'sleeping'
-        self.off
-      }
     end
 
     def self.shutdown
