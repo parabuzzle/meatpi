@@ -53,5 +53,3 @@ module MeatPi
 
   end
 end
-
-o = MeatPi::Omx.instance
