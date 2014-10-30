@@ -22,7 +22,7 @@ module MeatPi
       !file.match(/\//) ? audio_file = "#{@audio_path}/#{file}" : audio_file = file
       opts[:looping] ? loopit = '--loop' : loopit = ''
       mutex.synchronize {
-        @player_thread = Thread.new { system("omxplayer -o #{@output} #{audio_file} #{loopit} > /dev/null") }
+        @player_thread = Thread.new { system("omxplayer -o #{@output} #{audio_file} #{loopit} 2>&1 > /dev/null") }
       }
     end
 
@@ -31,7 +31,7 @@ module MeatPi
         @player_thread.exit
         @player_thread.terminate
       }
-      system('killall omxplayer.bin')
+      system('killall omxplayer.bin 2>&1 > /dev/null')
     end
 
     def status
@@ -53,3 +53,5 @@ module MeatPi
 
   end
 end
+
+o = MeatPi::Omx.instance
