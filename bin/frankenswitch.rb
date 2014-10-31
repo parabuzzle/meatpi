@@ -115,6 +115,7 @@ end
 
 threads << after(:pin => SWITCH_PIN, :goes => :low, :pull => :down) do
   puts "switch released!"
+  monster.exit # Always exit the monster first!
   monster.sleep!
   LIGHT_RELAY.on
 end
@@ -122,10 +123,12 @@ end
 # Signal initialization is complete
 3.times do
   LIGHT_RELAY.off
-  sleep 1
+  sleep 0.5
   LIGHT_RELAY.on
-  sleep 1
+  sleep 0.5
 end
+
+monster.sleep!
 
 # Let me know we're up and running
 puts "started"
