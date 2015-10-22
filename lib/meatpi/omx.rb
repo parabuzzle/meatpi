@@ -18,7 +18,8 @@ module MeatPi
     attr_accessor :output, :player_thread, :mutex, :audio_path
 
     def play(file, opts={})
-      stop!
+      overlap = opts[:overlap] || false
+      stop! unless overlap
       !file.match(/\//) ? audio_file = "#{@audio_path}/#{file}" : audio_file = file
       opts[:looping] ? loopit = '--loop' : loopit = ''
       mutex.synchronize {

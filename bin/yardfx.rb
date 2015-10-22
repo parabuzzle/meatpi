@@ -19,6 +19,11 @@ puts "starting"
 
 require 'meatpi'
 
+#cleanup pins
+[26, 19, 13, 6].each do |pin|
+  File.open("/sys/class/gpio/unexport", "w") { |f| f.write("#{pin}") }
+end
+
 # Setup ouput pin constants
 OUTPUTS = {
   :r1 => PiPiper::Pin.new(:pin => 26, :direction => :out),
@@ -39,17 +44,23 @@ OMX = MeatPi::Omx.instance
 
 # lightning & Thunder routine (run this in a thread to prevent blocking of main thread)
 def lightning_crash!
+  # Thunder!
+  OMX.play('thunder_crash.mp3', :overlap => true)
 
   # Lightning
   OUTPUTS[:r1].off
   sleep 0.55
   OUTPUTS[:r1].on
 
-  # Thunder!
-  sleep 0.5
-  OMX.play('thunder_crash.mp3')
+  # Wait for the audio to finish
+  sleep 19
 
   # SCARY!
+end
+
+def storm
+  sleep rand(20..50)
+  lightning_crash!
 end
 
 def background_audio
@@ -58,7 +69,6 @@ end
 
 # Shutdown routine for killing everything off gracefully
 def shutdown(threads)
-  $monster.exit
   # exit each thread safely
   threads.each do |thread|
     thread.exit
@@ -96,17 +106,19 @@ end
 ## Main Routine Logic
 
 # Signal initialization is complete
-3.times do
-  OUTPUTS[:r1].off
-  sleep 0.25
-  OUTPUTS[:r1].on
-  sleep 0.25
-end
+OUTPUTS[:r1].off
+sleep 2
+OUTPUTS[:r1].on
 
 # Start graveyard sounds here
-
+threads << Thread.new { background_audio }
 
 # Run a thread for random lighning crashes
+threads << Thread.new {
+  loop do
+    storm
+  end
+}
 
 # Let me know we're up and running
 puts "started"
