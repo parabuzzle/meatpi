@@ -64,7 +64,7 @@ def storm
 end
 
 def background_audio
-
+  OMX.play('graveyard_background.mp3', :overlap => true, :looping => true)
 end
 
 # Shutdown routine for killing everything off gracefully
