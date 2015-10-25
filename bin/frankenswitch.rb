@@ -60,8 +60,18 @@ def sirenate!
   end
 end
 
+def fog_machine!
+  loop do
+    SIREN_RELAY.off
+    sleep 10
+    SIREN_RELAY.on
+    sleep 30
+  end
+end
+
 monster = MeatPi::BoxMonster.instance(MONSTER_RELAY, true)
 $monster = Thread.new {}
+$fog     = Thread.new {}
 
 # Shutdown routine for killing everything off gracefully
 def shutdown(threads)
@@ -102,23 +112,52 @@ Signal.trap("INT") do
   shutdown(threads)
 end
 
-## Main Routine Logic
-
-# Pin watchers
-threads << after(:pin => SWITCH_PIN, :goes => :high, :pull => :down) do
-  puts 'switch activated!'
+def switch_on!
+  puts "switch activated!"
   LIGHT_RELAY.off
-  Thread.new { sirenate! }
+  $fog = Thread.new { fog_machine! }
   $monster.exit # Always exit the monster first!
   $monster = Thread.new { monster.angry_monster_routine }
 end
 
-threads << after(:pin => SWITCH_PIN, :goes => :low, :pull => :down) do
+def switch_off!
   puts "switch released!"
+  $fog.exit
   monster.exit # Always exit the monster first!
   monster.sleep!
   LIGHT_RELAY.on
 end
+
+## Main Routine Logic
+
+# Pin watchers
+
+threads << watch :pin => SWITCH_PIN, :invert => true do |pin|
+  puts "Pin changed from #{pin.last_value} to #{pin.value}"
+  case pin
+  when true
+    switch_on!
+  when false
+    switch_off!
+  else
+    switch_off!
+  end
+end
+
+#threads << after(:pin => SWITCH_PIN, :goes => :high, :pull => :down) do
+#  puts 'switch activated!'
+#  LIGHT_RELAY.off
+#  Thread.new { sirenate! }
+#  $monster.exit # Always exit the monster first!
+#  $monster = Thread.new { monster.angry_monster_routine }
+#end
+#
+#threads << after(:pin => SWITCH_PIN, :goes => :low, :pull => :down) do
+#  puts "switch released!"
+#  monster.exit # Always exit the monster first!
+#  monster.sleep!
+#  LIGHT_RELAY.on
+#end
 
 # Signal initialization is complete
 3.times do
