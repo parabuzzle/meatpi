@@ -21,7 +21,10 @@ require 'meatpi'
 
 #cleanup pins
 [26, 19, 13, 6].each do |pin|
-  File.open("/sys/class/gpio/unexport", "w") { |f| f.write("#{pin}") }
+  begin
+    File.open("/sys/class/gpio/unexport", "w") { |f| f.write("#{pin}") }
+  rescue
+  end
 end
 
 # Setup ouput pin constants

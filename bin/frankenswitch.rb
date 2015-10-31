@@ -34,6 +34,14 @@ puts "starting"
 
 require 'meatpi'
 
+#cleanup pins
+[24, 23, 18, 25].each do |pin|
+  begin
+    File.open("/sys/class/gpio/unexport", "w") { |f| f.write("#{pin}") }
+  rescue
+  end
+end
+
 # Setup ouput pin constants
 LIGHT_RELAY        = PiPiper::Pin.new(:pin => 24, :direction => :out)
 SIREN_RELAY        = PiPiper::Pin.new(:pin => 23, :direction => :out)
@@ -65,7 +73,7 @@ def fog_machine!
     SIREN_RELAY.off
     sleep 10
     SIREN_RELAY.on
-    sleep 30
+    sleep 60
   end
 end
 
@@ -116,14 +124,20 @@ def switch_on!
   puts "switch activated!"
   LIGHT_RELAY.off
   $fog = Thread.new { fog_machine! }
+  sleep 3 # pre-fog the box
   $monster.exit # Always exit the monster first!
   $monster = Thread.new { monster.angry_monster_routine }
 end
 
 def switch_off!
   puts "switch released!"
+
+  # TURN OFF THE F!$#ING FOG MACHINE!
+  $fog.kill
   $fog.exit
-  monster.exit # Always exit the monster first!
+  SIREN_RELAY.on
+
+  $monster.exit # Always exit the monster first!
   monster.sleep!
   LIGHT_RELAY.on
 end
@@ -132,7 +146,7 @@ end
 
 # Pin watchers
 
-threads << watch :pin => SWITCH_PIN, :invert => true do |pin|
+threads << watch(:pin => SWITCH_PIN, :invert => true) do |pin|
   puts "Pin changed from #{pin.last_value} to #{pin.value}"
   case pin
   when true
