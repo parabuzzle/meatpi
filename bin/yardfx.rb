@@ -62,7 +62,7 @@ def lightning_crash!
 end
 
 def storm
-  sleep rand(10..40)
+  sleep rand(10..20)
   lightning_crash!
 end
 
