@@ -77,7 +77,10 @@ def fog_machine!
   end
 end
 
-monster = MeatPi::BoxMonster.instance(MONSTER_RELAY, true)
+def monster
+  MeatPi::BoxMonster.instance(MONSTER_RELAY, true)
+end
+
 $monster = Thread.new {}
 $fog     = Thread.new {}
 
@@ -148,10 +151,10 @@ end
 
 threads << watch(:pin => SWITCH_PIN, :invert => true) do |pin|
   puts "Pin changed from #{pin.last_value} to #{pin.value}"
-  case pin
-  when true
+  case pin.value
+  when 0
     switch_on!
-  when false
+  when 1
     switch_off!
   else
     switch_off!
